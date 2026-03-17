@@ -1,0 +1,10 @@
+.vscode
+/node_modules/
+
+/airpods-bluetooth/node_modules/
+/apps/node_modules/
+
+/airpods-bluetooth/build/
+/apps/out/
+
+/shadcn-glass-ui-library/
