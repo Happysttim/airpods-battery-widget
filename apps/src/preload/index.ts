@@ -93,13 +93,17 @@ contextBridge.exposeInMainWorld('backend', {
   fingers: (): Promise<Record<string, Finger>> => ipcRenderer.invoke('fingers'),
   adapters: (): Promise<Adapter[]> => ipcRenderer.invoke('adapters'),
   setAdapter: (idx: number) => ipcRenderer.send('set-adapter', idx),
+  getAdapter: (): Promise<number | undefined> =>
+    ipcRenderer.invoke('get-adapter'),
   setInterval: (interval: number) => ipcRenderer.send('set-interval', interval),
+  interval: (): Promise<number> => ipcRenderer.invoke('get-interval'),
   updateWidget: (finger: Finger) => ipcRenderer.send('update-widget', finger),
   onUpdate: (listener: (event: IpcRendererEvent, finger: Finger) => void) =>
     ipcRenderer.on('update-finger', listener),
   removeListener: (
     listener: (event: IpcRendererEvent, finger: Finger) => void,
   ) => ipcRenderer.removeListener('update-finger', listener),
+  getHealth: (): Promise<Finger | undefined> => ipcRenderer.invoke('health'),
   createWidget: () => ipcRenderer.send('create-widget'),
   resizeToContent: (height: number, type: 'widget' | 'list') =>
     ipcRenderer.send('resize-to-content', height, type),

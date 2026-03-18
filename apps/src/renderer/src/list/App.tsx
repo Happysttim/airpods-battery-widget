@@ -2,11 +2,12 @@ import React, {
   useEffect,
   useRef,
   useState,
+  type ChangeEvent,
   type Dispatch,
   type RefObject,
+  type SetStateAction,
 } from 'react';
 import useResize from '@/lib/hooks/use-resize';
-import { LightRays } from '@/components/ui/light-rays';
 import {
   SelectGlass,
   SelectGlassContent,
@@ -14,7 +15,14 @@ import {
   SelectGlassTrigger,
   SelectGlassValue,
 } from '@/components/ui/select-glass';
-import { CardGlass, ScrollAreaGlass } from '@/components/ui';
+import {
+  ButtonGlass,
+  CardGlass,
+  InputGlass,
+  ScrollAreaGlass,
+  SeparatorGlass,
+  SkeletonGlass,
+} from '@/components/ui';
 
 const App = () => {
   const containerRef = useResize('list') as RefObject<HTMLDivElement>;
@@ -22,6 +30,8 @@ const App = () => {
   const [prevSelectedAdapterIndex, setPrevSelectedAdapterIndex] =
     useState<number>();
   const [airpods, setAirpods] = useState<Record<string, Airpods>>({});
+  const [scanInterval, setScanInterval] = useState<number>();
+  const [fetching, setFetching] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const loopScan = () => {
@@ -31,7 +41,7 @@ const App = () => {
 
     window.backend.fingers().then((airpods) => {
       setAirpods(airpods);
-      timeoutRef.current = setTimeout(loopScan, 2000);
+      timeoutRef.current = setTimeout(loopScan, scanInterval);
     });
   };
 
@@ -48,34 +58,55 @@ const App = () => {
     window.backend.setAdapter(selectedAdapterIndex);
     window.backend.startScan();
 
-    timeoutRef.current = setTimeout(loopScan, 2000);
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      window.backend.stopScan();
-    };
+    setFetching(true);
+    timeoutRef.current = setTimeout(loopScan, scanInterval);
   }, [selectedAdapterIndex]);
+
+  useEffect(() => {
+    if (scanInterval === undefined) {
+      window.backend.interval().then(setScanInterval);
+    }
+
+    window.backend.getAdapter().then(setSelectedAdapterIndex);
+  }, []);
 
   return (
     <div
       className="relative p-2 h-200 w-100 overflow-hidden rounded-xl"
       ref={containerRef}
     >
-      <LightRays />
-      <SelectAdapter setSelectedAdapterIndex={setSelectedAdapterIndex} />
+      <SelectAdapter
+        selectedAdapterIndex={selectedAdapterIndex}
+        setSelectedAdapterIndex={setSelectedAdapterIndex}
+      />
+      <SeparatorGlass className="my-2" />
+      {scanInterval ? (
+        <ScanInterval
+          scanInterval={scanInterval}
+          setScanInterval={setScanInterval}
+        />
+      ) : (
+        <SkeletonGlass />
+      )}
+      <SeparatorGlass className="my-2" />
+      {fetching && (
+        <h5 className="text-gray-200">
+          Found {Object.entries(airpods).length} airpods...
+        </h5>
+      )}
       {Object.entries(airpods).length > 0 && <AirpodsList airpods={airpods} />}
     </div>
   );
 };
 
 const SelectAdapter = ({
+  selectedAdapterIndex,
   setSelectedAdapterIndex,
 }: {
-  setSelectedAdapterIndex: Dispatch<React.SetStateAction<number | undefined>>;
+  selectedAdapterIndex: number | undefined;
+  setSelectedAdapterIndex: Dispatch<SetStateAction<number | undefined>>;
 }) => {
-  const [adapters, setAdapters] = React.useState<BluetoothAdapter[]>([]);
+  const [adapters, setAdapters] = useState<BluetoothAdapter[]>([]);
 
   useEffect(() => {
     window.backend.adapters().then(setAdapters);
@@ -84,6 +115,7 @@ const SelectAdapter = ({
   return (
     <SelectGlass
       onValueChange={(value) => setSelectedAdapterIndex(parseInt(value))}
+      value={selectedAdapterIndex?.toString()}
     >
       <SelectGlassTrigger className="w-90 [app-region:no-drag]">
         <SelectGlassValue placeholder="Bluetooth Adapter" />
@@ -126,6 +158,44 @@ const AirpodsList = ({ airpods }: { airpods: Record<string, Airpods> }) => {
           </CardGlass.Root>
         ))}
       </ScrollAreaGlass>
+    </div>
+  );
+};
+
+const ScanInterval = ({
+  scanInterval,
+  setScanInterval,
+}: {
+  scanInterval: number;
+  setScanInterval: Dispatch<SetStateAction<number | undefined>>;
+}) => {
+  const [value, setValue] = useState<number>(0);
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    setValue(value);
+  };
+  const handleClick = () => {
+    const ms = value * 1000;
+    setScanInterval(ms);
+  };
+  useEffect(() => setValue(Math.floor(scanInterval / 1000)), [scanInterval]);
+  return (
+    <div className="my-2">
+      <h5 className="text-gray-200">Scan Interval(sec)</h5>
+      <div className="flex gap-2 items-center justify-center">
+        <InputGlass
+          className="flex-1"
+          onChange={handleChange}
+          value={value}
+          type="number"
+          min="1"
+          step="1"
+          max="8"
+        />
+        <ButtonGlass variant="ghost" onClick={handleClick}>
+          Submit
+        </ButtonGlass>
+      </div>
     </div>
   );
 };

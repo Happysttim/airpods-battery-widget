@@ -72,7 +72,7 @@ declare class AirpodsBluetooth {
   setAdapter(idx: number): void;
   startScan(): void;
   stopScan(): void;
-  fingers(): Map<number, Finger>;
+  fingers(): Record<number, Finger>;
   isScan(): boolean;
   onScanFound(found: (finger: Finger) => void): void;
   startClean(): void;

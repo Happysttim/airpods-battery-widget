@@ -84,25 +84,34 @@ import '@/glass-theme.css';
 // VARIANTS
 // ========================================
 
-const circularProgressVariants = cva('relative inline-flex items-center justify-center p-4', {
-  variants: {
-    size: {
-      sm: 'w-20 h-20',
-      md: 'w-28 h-28',
-      lg: 'w-36 h-36',
-      xl: 'w-44 h-44',
+const circularProgressVariants = cva(
+  'relative inline-flex items-center justify-center p-4',
+  {
+    variants: {
+      size: {
+        sm: 'w-20 h-20',
+        md: 'w-28 h-28',
+        lg: 'w-36 h-36',
+        xl: 'w-44 h-44',
+      },
+    },
+    defaultVariants: {
+      size: 'md',
     },
   },
-  defaultVariants: {
-    size: 'md',
-  },
-});
+);
 
 // ========================================
 // TYPES
 // ========================================
 
-export type CircularProgressGradient = 'violet' | 'blue' | 'cyan' | 'amber' | 'emerald' | 'rose';
+export type CircularProgressGradient =
+  | 'violet'
+  | 'blue'
+  | 'cyan'
+  | 'amber'
+  | 'emerald'
+  | 'rose';
 
 /**
  * Props for CircularProgressGlass component.
@@ -277,15 +286,25 @@ export interface CircularProgressGlassProps
 // ========================================
 
 const getGradientColors = (gradient: CircularProgressGradient) => {
-  const gradients: Record<CircularProgressGradient, { from: string; to: string; glowVar: string }> =
-    {
-      violet: { from: '#8b5cf6', to: '#a855f7', glowVar: '--progress-glow-violet' },
-      blue: { from: '#3b82f6', to: '#60a5fa', glowVar: '--progress-glow-blue' },
-      cyan: { from: '#06b6d4', to: '#22d3ee', glowVar: '--progress-glow-cyan' },
-      amber: { from: '#f59e0b', to: '#fbbf24', glowVar: '--progress-glow-amber' },
-      emerald: { from: '#10b981', to: '#34d399', glowVar: '--progress-glow-emerald' },
-      rose: { from: '#f43f5e', to: '#fb7185', glowVar: '--progress-glow-rose' },
-    };
+  const gradients: Record<
+    CircularProgressGradient,
+    { from: string; to: string; glowVar: string }
+  > = {
+    violet: {
+      from: '#8b5cf6',
+      to: '#a855f7',
+      glowVar: '--progress-glow-violet',
+    },
+    blue: { from: '#3b82f6', to: '#60a5fa', glowVar: '--progress-glow-blue' },
+    cyan: { from: '#06b6d4', to: '#22d3ee', glowVar: '--progress-glow-cyan' },
+    amber: { from: '#f59e0b', to: '#fbbf24', glowVar: '--progress-glow-amber' },
+    emerald: {
+      from: '#10b981',
+      to: '#34d399',
+      glowVar: '--progress-glow-emerald',
+    },
+    rose: { from: '#f43f5e', to: '#fb7185', glowVar: '--progress-glow-rose' },
+  };
   return gradients[gradient];
 };
 
@@ -298,7 +317,10 @@ const getGlowStdDeviation = (intensity: 'low' | 'medium' | 'high'): number => {
 // COMPONENT
 // ========================================
 
-export const CircularProgressGlass = forwardRef<HTMLDivElement, CircularProgressGlassProps>(
+export const CircularProgressGlass = forwardRef<
+  HTMLDivElement,
+  CircularProgressGlassProps
+>(
   (
     {
       className,
@@ -318,7 +340,7 @@ export const CircularProgressGlass = forwardRef<HTMLDivElement, CircularProgress
       animationDuration = 1,
       ...props
     },
-    ref
+    ref,
   ) => {
     const clampedValue = Math.min(100, Math.max(0, value));
     const gradientColors = getGradientColors(color);
@@ -401,7 +423,7 @@ export const CircularProgressGlass = forwardRef<HTMLDivElement, CircularProgress
             filter={showGlow ? `url(#${glowId})` : undefined}
             className={cn(
               'transition-all',
-              variant === 'indeterminate' && 'animate-circular-progress-spin'
+              variant === 'indeterminate' && 'animate-circular-progress-spin',
             )}
             style={{
               transitionDuration: `${animationDuration}s`,
@@ -429,16 +451,23 @@ export const CircularProgressGlass = forwardRef<HTMLDivElement, CircularProgress
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label={
-            label || (variant === 'determinate' ? `Progress: ${clampedValue}%` : 'Loading progress')
+            label ||
+            (variant === 'determinate'
+              ? `Progress: ${clampedValue}%`
+              : 'Loading progress')
           }
-          aria-valuetext={label || (variant === 'determinate' ? `${clampedValue}%` : 'Loading...')}
+          aria-valuetext={
+            label ||
+            (variant === 'determinate' ? `${clampedValue}%` : 'Loading...')
+          }
           className="sr-only"
         >
-          {label || (variant === 'determinate' ? `${clampedValue}%` : 'Loading...')}
+          {label ||
+            (variant === 'determinate' ? `${clampedValue}%` : 'Loading...')}
         </div>
       </div>
     );
-  }
+  },
 );
 
 CircularProgressGlass.displayName = 'CircularProgressGlass';

@@ -131,8 +131,8 @@ namespace Airpods {
         if (battery.case_percent == other.battery.case_percent) score += 1;
         if (utp == other.utp) score += 1;
         if (mode == other.mode) score += 1;
-
-        return score >= 6 && std::abs(rssi - other.rssi) <= RSSI_NEARBY;
+        if (std::abs(rssi - other.rssi) <= RSSI_NEARBY) score += 1;
+        return score >= 7;
     }
 
     std::optional<Proximity> Proximity::parse(const int rssi, const std::map<uint16_t, SimpleBLE::ByteArray>& manu_) {

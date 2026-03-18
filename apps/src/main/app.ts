@@ -7,6 +7,7 @@ import type { Config } from './types/config';
 const BROWSER_PATH = app.isPackaged
   ? path.resolve('../renderer')
   : 'http://localhost:5173';
+const SCAN_INTERVAL = 5000;
 
 class App {
   private systemTray: Tray | null = null;
@@ -64,11 +65,15 @@ class App {
       x: this.config?.x ?? 0,
       y: this.config?.y ?? 0,
       frame: false,
-      transparent: true,
-      alwaysOnTop: true,
-      skipTaskbar: true,
-      focusable: true,
       resizable: true,
+      roundedCorners: true,
+      thickFrame: true,
+      hasShadow: true,
+      transparent: false,
+      backgroundMaterial: process.platform === 'win32' ? 'acrylic' : undefined,
+      vibrancy: process.platform === 'darwin' ? 'under-window' : undefined,
+      visualEffectState: process.platform === 'darwin' ? 'active' : undefined,
+      titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
@@ -117,6 +122,9 @@ class App {
       focusable: true,
       alwaysOnTop: true,
       fullscreenable: false,
+      roundedCorners: true,
+      vibrancy: 'under-window',
+      visualEffectState: 'active',
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
@@ -147,7 +155,10 @@ class App {
           if (!this.airpodsWidget) {
             this.initWidget();
           }
-          this.airpodsWidget?.show();
+
+          if (!this.airpodsWidget?.isVisible()) {
+            this.airpodsWidget?.show();
+          }
         },
       },
       {
@@ -159,7 +170,10 @@ class App {
           if (!this.listWindow) {
             this.initListWindow();
           }
-          this.listWindow?.show();
+
+          if (!this.listWindow?.isVisible()) {
+            this.listWindow?.show();
+          }
         },
       },
       {
@@ -168,9 +182,9 @@ class App {
           if (!this.airpodsBluetooth) {
             process.exit(0);
           }
-          if (this.airpodsBluetooth.isScan()) {
-            this.airpodsBluetooth?.stopScan();
-          }
+          this.airpodsBluetooth.stopScan();
+          this.airpodsBluetooth.stopClean();
+          this.systemTray?.destroy();
           process.exit(0);
         },
       },
@@ -180,7 +194,11 @@ class App {
 
   initHook() {
     ipcMain.on('start-scan', () => {
-      if (!this.airpodsBluetooth || this.scanInterval) {
+      if (
+        !this.airpodsBluetooth ||
+        this.scanInterval ||
+        this.selectedAdapter === null
+      ) {
         return;
       }
 
@@ -189,6 +207,7 @@ class App {
           return;
         }
         this.airpodsBluetooth?.startScan();
+        this.airpodsBluetooth?.startClean();
       }, this.config?.scanInterval ?? 5000);
     });
 
@@ -199,6 +218,7 @@ class App {
       clearInterval(this.scanInterval);
       this.scanInterval = null;
       this.airpodsBluetooth.stopScan();
+      this.airpodsBluetooth.stopClean();
     });
 
     ipcMain.handle('is-scan', () => {
@@ -222,13 +242,24 @@ class App {
       return this.airpodsBluetooth.scanAdapters();
     });
 
-    ipcMain.on('set-adapter', (_, idx: number) => {
-      if (!this.airpodsBluetooth) {
+    ipcMain.handle('get-interval', () => {
+      if (!this.config) {
+        return SCAN_INTERVAL;
+      }
+      return this.config.scanInterval;
+    });
+
+    ipcMain.on('set-adapter', (_, idx: number | null) => {
+      if (!this.airpodsBluetooth || idx === null) {
         return;
       }
 
       this.selectedAdapter = idx;
       this.airpodsBluetooth.setAdapter(idx);
+    });
+
+    ipcMain.handle('get-adapter', () => {
+      return this.selectedAdapter;
     });
 
     ipcMain.on('set-interval', (_, interval: number) => {
@@ -252,6 +283,9 @@ class App {
       }
       if (!this.airpodsWidget) {
         this.initWidget();
+      }
+      if (this.listWindow?.isVisible()) {
+        this.listWindow.hide();
       }
       this.airpodsWidget?.show();
     });
@@ -281,6 +315,15 @@ class App {
         return 0;
       }
       return this.selectedAdapter;
+    });
+
+    ipcMain.handle('health', () => {
+      if (!this.airpodsBluetooth || !this.selectedFinger) {
+        return undefined;
+      }
+
+      const fingers = this.airpodsBluetooth.fingers();
+      return fingers[this.selectedFinger.timestamp!];
     });
   }
 

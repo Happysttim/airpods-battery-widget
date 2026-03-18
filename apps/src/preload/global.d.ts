@@ -15,7 +15,9 @@ export interface IBackEnd {
   fingers: () => Promise<Record<string, Finger>>;
   adapters: () => Promise<Adapter[]>;
   setAdapter: (idx: number) => void;
+  getAdapter: () => Promise<number | undefined>;
   setInterval: (interval: number) => void;
+  interval: () => Promise<number>;
   updateWidget: (finger: Finger) => void;
   createWidget: () => void;
   resizeToContent: (height: number, type: 'widget' | 'list') => void;
@@ -30,6 +32,7 @@ export interface IBackEnd {
   removeListener: (
     listener: (event: IpcRendererEvent, airpods: Airpods) => void,
   ) => IpcRenderer;
+  getHealth: () => Promise<Airpods | undefined>;
 }
 
 declare global {
