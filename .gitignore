@@ -6,5 +6,6 @@
 
 /airpods-bluetooth/build/
 /apps/out/
+/apps/release/
 
 /shadcn-glass-ui-library/

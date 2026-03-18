@@ -7,7 +7,11 @@
   "scripts": {
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
-    "prebuild": "electron-vite build"
+    "build": "electron-vite build",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win nsis",
+    "dist:portable": "npm run build && electron-builder --win portable",
+    "dist:mac": "npm run build && electron-builder --mac dmg"
   },
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
@@ -51,5 +55,77 @@
     "shadcn": "^4.0.8",
     "vite": "^7.3.1",
     "vite-plugin-svgr": "^4.5.0"
+  },
+  "build": {
+    "appId": "com.happysttim.airpodswidget",
+    "productName": "AirPods Widget",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "assets/**",
+      "out/**",
+      "package.json",
+      "!src/**",
+      "!node_modules/.cache/**"
+    ],
+    "asarUnpack": [
+      "**/*.node"
+    ],
+    "extraResources": [
+      {
+        "from": "native/Release/airpods-bluetooth.node",
+        "to": "native/airpods-bluetooth.node"
+      },
+      {
+        "from": "resources/config.json",
+        "to": "defaults/config.json"
+      }
+    ],
+    "asar": true,
+    "compression": "normal",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/airpods.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "icon": "assets/airpods.ico",
+      "category": "public.app-category.utilities",
+      "hardenedRuntime": true,
+      "notarize": false
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "assets/airpods.ico",
+      "category": "Utility"
+    }
   }
 }

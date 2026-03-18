@@ -11,7 +11,7 @@
 namespace Airpods {
 
     namespace {
-        constexpr std::chrono::seconds TTL(8);
+        constexpr std::chrono::seconds TTL(20);
         std::unordered_map<long long, ProximityTTL> fingers_;
 
         int to_percent(uint8_t level) {
@@ -132,7 +132,7 @@ namespace Airpods {
         if (utp == other.utp) score += 1;
         if (mode == other.mode) score += 1;
         if (std::abs(rssi - other.rssi) <= RSSI_NEARBY) score += 1;
-        return score >= 7;
+        return score >= 6;
     }
 
     std::optional<Proximity> Proximity::parse(const int rssi, const std::map<uint16_t, SimpleBLE::ByteArray>& manu_) {

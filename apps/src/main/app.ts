@@ -5,7 +5,7 @@ import { AirpodsBluetooth, type Finger } from 'airpods-bluetooth';
 import type { Config } from './types/config';
 
 const BROWSER_PATH = app.isPackaged
-  ? path.resolve('../renderer')
+  ? path.join(__dirname, '../renderer')
   : 'http://localhost:5173';
 const SCAN_INTERVAL = 5000;
 
@@ -18,6 +18,8 @@ class App {
   private selectedFinger: Finger | null = null;
   private selectedAdapter: number | null = null;
   private scanInterval: NodeJS.Timeout | null = null;
+
+  private readonly configPath: string;
 
   private nearTray(win: BrowserWindow) {
     if (!this.systemTray) {
@@ -36,8 +38,7 @@ class App {
   }
 
   async loadConfig() {
-    const configPath = path.join(__dirname, '../../assets/config.json');
-    const configContent = await fs.readFile(configPath, 'utf-8');
+    const configContent = await fs.readFile(this.configPath, 'utf-8');
     this.config = JSON.parse(configContent) as Config;
   }
 
@@ -45,17 +46,16 @@ class App {
     if (!this.config) {
       return;
     }
-    const configPath = path.join(__dirname, '../../assets/config.json');
     await fs.writeFile(
-      configPath,
+      this.configPath,
       JSON.stringify(this.config, null, 2),
       'utf-8',
     );
   }
 
-  constructor() {
+  constructor(configPath: string) {
+    this.configPath = configPath;
     this.airpodsBluetooth = new AirpodsBluetooth();
-    this.airpodsBluetooth.interval = 2000;
   }
 
   initWidget() {
@@ -118,13 +118,15 @@ class App {
       useContentSize: true,
       resizable: false,
       frame: false,
-      transparent: true,
-      focusable: true,
-      alwaysOnTop: true,
-      fullscreenable: false,
       roundedCorners: true,
-      vibrancy: 'under-window',
-      visualEffectState: 'active',
+      thickFrame: true,
+      hasShadow: true,
+      transparent: false,
+      alwaysOnTop: true,
+      backgroundMaterial: process.platform === 'win32' ? 'acrylic' : undefined,
+      vibrancy: process.platform === 'darwin' ? 'under-window' : undefined,
+      visualEffectState: process.platform === 'darwin' ? 'active' : undefined,
+      titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
@@ -147,7 +149,7 @@ class App {
     );
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: 'Show AirPods Battery',
+        label: `Show AirPods Battery`,
         click: () => {
           if (!this.airpodsBluetooth || !this.config || !this.selectedFinger) {
             return;
@@ -158,6 +160,23 @@ class App {
 
           if (!this.airpodsWidget?.isVisible()) {
             this.airpodsWidget?.show();
+          }
+        },
+      },
+      {
+        label: `Hide AirPods Battery`,
+        click: () => {
+          if (
+            !this.airpodsBluetooth ||
+            !this.config ||
+            !this.selectedFinger ||
+            !this.airpodsWidget
+          ) {
+            return;
+          }
+
+          if (this.airpodsWidget.isVisible()) {
+            this.airpodsWidget.hide();
           }
         },
       },
